@@ -46,12 +46,15 @@ namespace KKAPI.Chara
 
             public static void ChaControl_InitializePostHook(ChaControl __instance)
             {
-                KoikatuAPI.Logger.LogDebug($"Character card load: {GetLogName(__instance)} {(MakerAPI.CharaListIsLoading ? "inside CharaList" : string.Empty)}");
+                KoikatuAPI.Logger.LogDebug($"ChaControl initialized: {GetLogName(__instance)} {(MakerAPI.CharaListIsLoading ? "inside CharaList" : string.Empty)}");
 
                 ChaControls.Add(__instance);
 
                 if (!MakerAPI.CharaListIsLoading)
+                {
                     CreateOrAddBehaviours(__instance);
+                    ReloadChara(__instance);
+                }
             }
 
             [HarmonyPostfix]
@@ -115,7 +118,7 @@ namespace KKAPI.Chara
                  64	00C4	stfld	uint8[] ChaFile::pngData
                  */
 
-				var il = instructions.ToList();
+                var il = instructions.ToList();
 
                 var target = AccessTools.Field(typeof(ChaFile), nameof(ChaFile.pngData));
                 if (target == null) throw new ArgumentNullException(nameof(target));
@@ -209,5 +212,5 @@ namespace KKAPI.Chara
                 ClothesFileControlLoading = false;
             }
         }
-	}
+    }
 }

@@ -217,7 +217,7 @@ namespace KKAPI.Chara
                         if (i == 0)
                         {
                             changed = currentCoordinate != controllerSubject.Value;
-                            if(changed && KoikatuAPI.EnableDebugLogging)
+                            if (changed && KoikatuAPI.EnableDebugLogging)
                                 KoikatuAPI.Logger.LogMessage($"Changed coord of character {target.fileParam.fullname} to {currentCoordinate}");
                         }
 
@@ -253,30 +253,44 @@ namespace KKAPI.Chara
             else
                 _currentlyReloading.Add(chaControl);
 
-            KoikatuAPI.Logger.LogDebug("Character load/reload: " + GetLogName(chaControl));
+            if (_currentReloadChara == null)
+                _currentReloadChara = KoikatuAPI.Instance.StartCoroutine(ReloadCharaCo());
+        }
 
-            // Always send events to controllers before subscribers of CharacterReloaded
-            var gamemode = KoikatuAPI.GetCurrentGameMode();
-            foreach (var behaviour in GetBehaviours(chaControl))
-                behaviour.OnReloadInternal(gamemode);
+        private static Coroutine _currentReloadChara;
+        private static IEnumerator ReloadCharaCo()
+        {
+            do
+                yield return null;
+            while (Manager.Scene.Instance.IsNowLoadingFade);// || !Manager.Scene.Instance.sceneFade.IsEnd)
 
-            var args = new CharaReloadEventArgs(chaControl);
-            try
+            foreach (var chara in _currentlyReloading)
             {
-                CharacterReloaded?.Invoke(null, args);
-            }
-            catch (Exception e)
-            {
-                KoikatuAPI.Logger.LogError(e);
+                if (!chara) continue;
+
+                KoikatuAPI.Logger.LogDebug("Character load/reload: " + GetLogName(chara));
+
+                // Always send events to controllers before subscribers of CharacterReloaded
+                var gamemode = KoikatuAPI.GetCurrentGameMode();
+                foreach (var behaviour in GetBehaviours(chara))
+                    behaviour.OnReloadInternal(gamemode);
+
+                var args = new CharaReloadEventArgs(chara);
+                try
+                {
+                    CharacterReloaded?.Invoke(null, args);
+                }
+                catch (Exception e)
+                {
+                    KoikatuAPI.Logger.LogError(e);
+                }
+
+                if (MakerAPI.InsideAndLoaded)
+                    MakerAPI.OnReloadInterface(args);
             }
 
-            if (MakerAPI.InsideAndLoaded)
-                MakerAPI.OnReloadInterface(args);
-
-            if (chaControl == null)
-                _currentlyReloading.Clear();
-            else
-                _currentlyReloading.Remove(chaControl);
+            _currentlyReloading.Clear();
+            _currentReloadChara = null;
         }
 
         private static bool IsCurrentlyReloading(ChaControl chaControl)

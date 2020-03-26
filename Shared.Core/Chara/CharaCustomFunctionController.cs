@@ -307,7 +307,7 @@ namespace KKAPI.Chara
         protected virtual void Start()
         {
             Started = true;
-            OnReloadInternal(KoikatuAPI.GetCurrentGameMode());
+            //OnReloadInternal(KoikatuAPI.GetCurrentGameMode());
         }
     }
 }
