@@ -22,7 +22,7 @@ namespace KKAPI
         private const string GUID = "marco.authordata";
 
         private static ManualLogSource _logger;
-        private static ConfigWrapper<string> _nickname;
+        private static ConfigEntry<string> _nickname;
         private MakerText _authorText;
 
         private static string CurrentNickname
@@ -42,7 +42,16 @@ namespace KKAPI
 
             MakerCardSave.RegisterNewCardSavePathModifier(null, FilenameModifier);
 
-            _nickname = Config.Wrap("", "Nickname", "Your nickname that will be saved to your cards and used in the card filenames.", DefaultNickname);
+            string configPath = Path.Combine(UserData.Path, "config/AuthorData.cfg");
+            var configExists = File.Exists(configPath);
+            var cfg = new ConfigFile(configPath, false, Info.Metadata);
+            _nickname = cfg.Bind("AuthorInformation", "Nickname", DefaultNickname, "Your nickname that will be saved to your cards and used in the card filenames.");
+
+            if(!configExists)
+            {
+                var legacyConfig = Config.Bind("", "Nickname", "Your nickname that will be saved to your cards and used in the card filenames.", DefaultNickname);
+                _nickname.Value = legacyConfig.Value;
+            }
 
             CharacterApi.RegisterExtraBehaviour<CardAuthorDataController>(GUID);
             MakerAPI.RegisterCustomSubCategories += MakerAPI_RegisterCustomSubCategories;
